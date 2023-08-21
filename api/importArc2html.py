@@ -66,7 +66,7 @@ class handler(BaseHTTPRequestHandler):
         self.send_response(200)  # OK
         self.send_header('Content-type', 'text/plain')
         self.end_headers()
-         self.wfile.write(b"JSON received and parsed successfully.")
+        self.wfile.write(b"JSON received and parsed successfully.")
         self.wfile.write(html_output.encode('utf-8'))
 
 def create_html_bookmark_file(json_path):
