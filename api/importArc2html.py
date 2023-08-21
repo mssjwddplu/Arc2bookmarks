@@ -16,14 +16,18 @@ def convert_json_to_html(json_data):
     return formatted_content
 
 class handler(BaseHTTPRequestHandler):
+    print("执行 handler")
     def do_POST(self):
+        print("执行 do_POST")
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length).decode('utf-8')
 
         # 打印接收到的 POST 数据
-        print("Received POST data:", post_data)
+        # print("Received POST data:", post_data)
+        print("打印接收到的 POST 数据")
 
         # 检查请求体是否为空
+        print("执行 not post_data")
         if not post_data:
             self.send_response(400)  # Bad Request
             self.send_header('Content-type', 'text/plain')
@@ -32,6 +36,7 @@ class handler(BaseHTTPRequestHandler):
             return
 
         # 尝试解析 JSON 数据
+        print("尝试解析 JSON 数据")
         try:
             json_data = json.loads(post_data)
             print("Successfully parsed JSON data:", json_data)
@@ -44,6 +49,7 @@ class handler(BaseHTTPRequestHandler):
             return
 
         # 调用 convert_json_to_html 函数
+        print("调用 convert_json_to_html 函数")
         html_output = convert_json_to_html(json_data)
 
         # 返回生成的HTML
