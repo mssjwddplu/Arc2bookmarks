@@ -5,18 +5,6 @@ from http.server import BaseHTTPRequestHandler
 from io import BytesIO
 import cgi
 
-def convert_json_to_html(json_data):
-    # 使用内存中的 JSON 数据，而不是从文件中读取
-    to_process, processed, spaces_data = parse_json_and_extract_data(json_data)
-    html_content = create_html_bookmark_file()
-    update_html_and_process_items(html_content, to_process, processed, spaces_data)
-    move_topapps_and_update_html(html_content, to_process, processed)
-    remove_empty_items(to_process)
-    process_items_without_savedURL(html_content, to_process, processed)
-    process_remaining_items_and_update_html(html_content, to_process, processed)
-    formatted_content = format_html(html_content)
-    return formatted_content
-
 '''
 class HTTPRequest(BaseHTTPRequestHandler):
     def __init__(self, request_text):
@@ -30,51 +18,58 @@ class HTTPRequest(BaseHTTPRequestHandler):
         self.error_message = message
 '''
 
+
 class handler(BaseHTTPRequestHandler):
+
     def do_POST(self):
-        # 获取请求的content-type
-        content_type = self.headers['Content-Type']
+        content_length = int(self.headers['Content-Length'])
+        post_data = self.rfile.read(content_length).decode('utf-8')
 
-        # 检查是否为multipart/form-data请求
-        if 'multipart/form-data' in content_type:
-            # 使用cgi库解析请求
-            form = cgi.FieldStorage(
-                fp=self.rfile,
-                headers=self.headers,
-                environ={'REQUEST_METHOD': 'POST'}
-            )
+        # 打印接收到的 POST 数据
+        print("Received POST data:", post_data)
 
-            # 获取名为"json"的文件字段
-            file_item = form['json']
-
-            # 检查文件字段是否存在
-            if file_item.filename:
-                # 读取文件内容
-                json_file_content = file_item.file.read().decode('utf-8')
-                print("Received JSON content:", json_file_content)  # 打印接收到的JSON内容
-            else:
-                print("No file uploaded")  # 打印错误消息
-                self.send_response(400)  # Bad Request
-                self.send_header('Content-type', 'text/plain')
-                self.end_headers()
-                self.wfile.write(b"No file uploaded.")
-                return
-        else:
-            print("Invalid content type:", content_type)  # 打印错误消息
+        # 检查请求体是否为空
+        if not post_data:
             self.send_response(400)  # Bad Request
             self.send_header('Content-type', 'text/plain')
             self.end_headers()
-            self.wfile.write(b"Invalid content type.")
+            self.wfile.write(b"Empty request body received.")
             return
 
-        # 调用 convert_json_to_html 函数（假设您已经定义了这个函数）
+        # 尝试解析 JSON 数据
+        try:
+            json_data = json.loads(post_data)
+            print("Successfully parsed JSON data:", json_data)
+        except json.JSONDecodeError as e:
+            print("JSON decoding error:", str(e))
+            self.send_response(400)  # Bad Request
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(b"Invalid JSON received.")
+            return
+
+        # 调用 convert_json_to_html 函数
         html_output = convert_json_to_html(json_data)
 
         # 返回生成的HTML
         self.send_response(200)  # OK
-        self.send_header('Content-type', 'text/plain')
+        self.send_header('Content-type', 'text/html')
         self.end_headers()
-        self.wfile.write(b"JSON received and parsed successfully.")
+        self.wfile.write(html_output.encode('utf-8'))
+
+
+def convert_json_to_html(json_data):
+    # 使用内存中的 JSON 数据，而不是从文件中读取
+    to_process, processed, spaces_data = parse_json_and_extract_data(json_data)
+    html_content = create_html_bookmark_file()
+    update_html_and_process_items(html_content, to_process, processed, spaces_data)
+    move_topapps_and_update_html(html_content, to_process, processed)
+    remove_empty_items(to_process)
+    process_items_without_savedURL(html_content, to_process, processed)
+    process_remaining_items_and_update_html(html_content, to_process, processed)
+    formatted_content = format_html(html_content)
+    return formatted_content
+
 
 def create_html_bookmark_file(json_path):
     print(json_path)
