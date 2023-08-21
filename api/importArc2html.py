@@ -33,7 +33,7 @@ class handler(BaseHTTPRequestHandler):
             'wsgi.input': self.rfile,
             'wsgi.errors': self.wfile,
         }
-        stream, form_data, files = parse_form_data(environ, strict=False)
+        stream, form_data, files = parse_form_data(environ)
 
         # 获取 FileStorage 对象
         json_file = files['json']
