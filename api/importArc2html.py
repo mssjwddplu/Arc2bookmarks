@@ -3,7 +3,7 @@ import json
 from bs4 import BeautifulSoup, NavigableString
 from http.server import BaseHTTPRequestHandler
 from io import BytesIO
-from werkzeug.datastructures import FileStorage
+from werkzeug.datastructures import EnvironHeaders
 from werkzeug.formparser import parse_form_data
 
 '''
@@ -19,36 +19,32 @@ class HTTPRequest(BaseHTTPRequestHandler):
         self.error_message = message
 '''
 
-
 class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
-        content_length = int(self.headers['Content-Length'])
-        content_type = self.headers['Content-Type']
-
+        # 获取请求头
+        headers = EnvironHeaders(self.headers.items())
+        
+        # 使用 Werkzeug 的 parse_form_data 解析 POST 数据
         environ = {
-            'CONTENT_LENGTH': str(content_length),
-            'CONTENT_TYPE': content_type,
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': self.headers['Content-Type'],
+            'CONTENT_LENGTH': self.headers['Content-Length'],
             'wsgi.input': self.rfile,
+            'wsgi.errors': self.wfile,
         }
-        stream, form, files = parse_form_data(environ)
-        json_file = files.get('json')
+        stream, form_data, files = parse_form_data(environ, strict=False)
 
-        # 打印接收到的 POST 数据
-        print("Received POST data:")
+        # 获取 FileStorage 对象
+        json_file = files['json']
 
-        # 检查请求体是否为空
-        if not json_file:
-            self.send_response(400)  # Bad Request
-            self.send_header('Content-type', 'text/plain')
-            self.end_headers()
-            self.wfile.write(b"Empty request body received.")
-            return
+        # 从 FileStorage 对象中读取内容
+        json_content = json_file.read().decode('utf-8')
 
         # 尝试解析 JSON 数据
         try:
-            json_data = json.loads(json_file)
-            print("Successfully parsed JSON data:")
+            json_data = json.loads(json_content)
+            print("Successfully parsed JSON data:", json_data)
         except json.JSONDecodeError as e:
             print("JSON decoding error:", str(e))
             self.send_response(400)  # Bad Request
@@ -142,6 +138,7 @@ def parse_json_and_extract_data(json_path):
             spaces_data.append(space_data)
     processed = []
     return to_process, processed, spaces_data
+
 
 def update_html_and_process_items(json_path, to_process, processed, spaces_data): 
     # 获取 JSON 文件所在的目录
