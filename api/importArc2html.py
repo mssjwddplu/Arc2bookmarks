@@ -31,16 +31,27 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(b"Empty request body received.")
             return
 
+        # 手动解析 post_data
+        # 这只是一个简单的示例，你可以根据需要添加更多的检查
+        if post_data.startswith('{') and post_data.endswith('}'):
+            print("POST data seems to be a JSON object.")
+        else:
+            print("POST data doesn't seem to be a JSON object.")
+
         # 尝试解析 JSON 数据
         try:
             json_data = json.loads(post_data)
+            print("Successfully parsed JSON data:", json_data)
         except json.JSONDecodeError as e:
-            print(f"JSON decoding error: {e}")  # 打印具体的错误信息
+            print("JSON decoding error:", str(e))
             self.send_response(400)  # Bad Request
             self.send_header('Content-type', 'text/plain')
             self.end_headers()
             self.wfile.write(b"Invalid JSON received.")
             return
+
+        # ... 你的其他代码 ...
+
 
 def create_html_bookmark_file(json_path):
     print(json_path)
