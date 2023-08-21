@@ -3,7 +3,7 @@ import json
 from bs4 import BeautifulSoup, NavigableString
 from http.server import BaseHTTPRequestHandler
 from io import BytesIO
-from http.client import parse_header
+from email.utils import parse_header
 
 def convert_json_to_html(json_data):
     # 使用内存中的 JSON 数据，而不是从文件中读取
