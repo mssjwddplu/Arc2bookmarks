@@ -9,17 +9,17 @@ function convertToJson() {
     const formData = new FormData();
     formData.append('json', file);
 
+    // 打印要发送的文件信息
+    console.log("Sending file:", file.name, "Size:", file.size);
+
     // 修改这里的 URL
     fetch('/api/importArc2html', {
         method: 'POST',
         body: formData
     })
     .then(response => {
-        // 检查响应是否正常
         if (!response.ok) {
-            // 打印服务器返回的状态和状态文本
-            console.error('Server Response:', response.status, response.statusText);
-            throw new Error('Server responded with an error.');
+            throw new Error(`Server responded with an error. Status: ${response.status}`);
         }
         return response.blob();
     })
@@ -31,6 +31,6 @@ function convertToJson() {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred. Please check the console for more details.');
+        alert('An error occurred. Please try again.');
     });
 }
