@@ -1,0 +1,23 @@
+{
+  "builds": [
+    {
+      "src": "wsgi.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/.*",
+      "dest": "wsgi.py"
+    }
+  ],
+  "probes": [
+    {
+      "path": "/",
+      "mustContain": "Hello World"
+    }
+  ]
+}
