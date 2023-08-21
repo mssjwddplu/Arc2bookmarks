@@ -3,6 +3,7 @@ import json
 from bs4 import BeautifulSoup, NavigableString
 from http.server import BaseHTTPRequestHandler
 from io import BytesIO
+import cgi
 
 def convert_json_to_html(json_data):
     # 使用内存中的 JSON 数据，而不是从文件中读取
@@ -16,6 +17,7 @@ def convert_json_to_html(json_data):
     formatted_content = format_html(html_content)
     return formatted_content
 
+'''
 class HTTPRequest(BaseHTTPRequestHandler):
     def __init__(self, request_text):
         self.rfile = BytesIO(request_text)
@@ -26,42 +28,43 @@ class HTTPRequest(BaseHTTPRequestHandler):
     def send_error(self, code, message):
         self.error_code = code
         self.error_message = message
+'''
 
 class handler(BaseHTTPRequestHandler):
-
     def do_POST(self):
-        # 获取请求头中的 content-type
+        # 获取请求的content-type
         content_type = self.headers['Content-Type']
-        content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length)
-        
-        # 使用新的HTTPRequest类来解析请求
-        request = HTTPRequest(post_data)
 
-        # 检查是否有解析错误
-        if request.error_code:
-            print("Error parsing request:", request.error_message)  # 添加日志打印
+        # 检查是否为multipart/form-data请求
+        if 'multipart/form-data' in content_type:
+            # 使用cgi库解析请求
+            form = cgi.FieldStorage(
+                fp=self.rfile,
+                headers=self.headers,
+                environ={'REQUEST_METHOD': 'POST'}
+            )
+
+            # 获取名为"json"的文件字段
+            file_item = form['json']
+
+            # 检查文件字段是否存在
+            if file_item.filename:
+                # 读取文件内容
+                json_file_content = file_item.file.read().decode('utf-8')
+                print("Received JSON content:", json_file_content)  # 打印接收到的JSON内容
+            else:
+                print("No file uploaded")  # 打印错误消息
+                self.send_response(400)  # Bad Request
+                self.send_header('Content-type', 'text/plain')
+                self.end_headers()
+                self.wfile.write(b"No file uploaded.")
+                return
+        else:
+            print("Invalid content type:", content_type)  # 打印错误消息
             self.send_response(400)  # Bad Request
             self.send_header('Content-type', 'text/plain')
             self.end_headers()
-            self.wfile.write(b"Error parsing request.")
-            return
-        
-        # 获取 json 文件内容
-        file_content = form_data.files['json'][0].file.read().decode('utf-8')
-
-        # 打印接收到的JSON内容
-        print("Received JSON content:", json_file_content)  # 添加日志打印
-
-        # 尝试解析 JSON 数据
-        try:
-            json_data = json.loads(file_content)
-        except json.JSONDecodeError as e:
-            print("Error decoding JSON:", str(e))  # 添加日志打印
-            self.send_response(400)  # Bad Request
-            self.send_header('Content-type', 'text/plain')
-            self.end_headers()
-            self.wfile.write(b"Invalid JSON received.")
+            self.wfile.write(b"Invalid content type.")
             return
 
         # 调用 convert_json_to_html 函数（假设您已经定义了这个函数）
@@ -72,7 +75,6 @@ class handler(BaseHTTPRequestHandler):
         self.send_header('Content-type', 'text/plain')
         self.end_headers()
         self.wfile.write(b"JSON received and parsed successfully.")
-        self.wfile.write(html_output.encode('utf-8'))
 
 def create_html_bookmark_file(json_path):
     print(json_path)
