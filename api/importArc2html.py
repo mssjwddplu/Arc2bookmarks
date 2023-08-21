@@ -2,7 +2,8 @@ import os
 import json
 from bs4 import BeautifulSoup, NavigableString
 from http.server import BaseHTTPRequestHandler
-from multipart import parse_form_data
+from io import BytesIO
+from multipart.multipart import parse_header, parse_multipart
 
 def convert_json_to_html(json_data):
     # 使用内存中的 JSON 数据，而不是从文件中读取
@@ -20,17 +21,16 @@ class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         # 获取请求头中的 content-type
-        content_type = self.headers.get('Content-Type')
+        content_type = self.headers['Content-Type']
+        content_length = int(self.headers['Content-Length'])
+        post_data = self.rfile.read(content_length)
         
         # 使用 python-multipart 解析请求数据
-        environ = {
-            'REQUEST_METHOD': 'POST',
-            'CONTENT_TYPE': content_type,
-            'CONTENT_LENGTH': self.headers.get('Content-Length')
-        }
-        form_data = parse_form_data(environ, self.rfile)
+        main_value, params = parse_header(content_type)
+        boundary = params['boundary'].encode('utf-8')
+        form_data = parse_multipart(BytesIO(post_data), boundary)
         
-        # 获取上传的文件内容
+        # 获取 json 文件内容
         file_content = form_data.files['json'][0].file.read().decode('utf-8')
 
         # 尝试解析 JSON 数据
