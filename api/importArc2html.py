@@ -3,7 +3,6 @@ import json
 from bs4 import BeautifulSoup, NavigableString
 from http.server import BaseHTTPRequestHandler
 from io import BytesIO
-from email.utils import parse_header
 
 def convert_json_to_html(json_data):
     # 使用内存中的 JSON 数据，而不是从文件中读取
@@ -17,6 +16,17 @@ def convert_json_to_html(json_data):
     formatted_content = format_html(html_content)
     return formatted_content
 
+class HTTPRequest(BaseHTTPRequestHandler):
+    def __init__(self, request_text):
+        self.rfile = BytesIO(request_text)
+        self.raw_requestline = self.rfile.readline()
+        self.error_code = self.error_message = None
+        self.parse_request()
+
+    def send_error(self, code, message):
+        self.error_code = code
+        self.error_message = message
+
 class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
@@ -25,10 +35,16 @@ class handler(BaseHTTPRequestHandler):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)
         
-        # 使用 python-multipart 解析请求数据
-        main_value, params = parse_header(content_type)
-        boundary = params['boundary'].encode('utf-8')
-        form_data = parse_multipart(BytesIO(post_data), boundary)
+        # 使用新的HTTPRequest类来解析请求
+        request = HTTPRequest(post_data)
+
+        # 检查是否有解析错误
+        if request.error_code:
+            self.send_response(400)  # Bad Request
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(b"Error parsing request.")
+            return
         
         # 获取 json 文件内容
         file_content = form_data.files['json'][0].file.read().decode('utf-8')
@@ -48,10 +64,10 @@ class handler(BaseHTTPRequestHandler):
 
         # 返回生成的HTML
         self.send_response(200)  # OK
-        self.send_header('Content-type', 'text/html')
+        self.send_header('Content-type', 'text/plain')
         self.end_headers()
+         self.wfile.write(b"JSON received and parsed successfully.")
         self.wfile.write(html_output.encode('utf-8'))
-
 
 def create_html_bookmark_file(json_path):
     print(json_path)
