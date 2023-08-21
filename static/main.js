@@ -9,7 +9,8 @@ function convertToJson() {
     const formData = new FormData();
     formData.append('json', file);
 
-    fetch('/api/convert', {
+    // 修改这里的 URL
+    fetch('/api/importArc2html', {
         method: 'POST',
         body: formData
     })
