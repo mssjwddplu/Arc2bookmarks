@@ -1,5 +1,6 @@
 import os
 import json
+import tempfile
 from bs4 import BeautifulSoup, NavigableString
 from http.server import BaseHTTPRequestHandler
 from io import BytesIO
@@ -20,31 +21,14 @@ class HTTPRequest(BaseHTTPRequestHandler):
 '''
 
 class handler(BaseHTTPRequestHandler):
-
     def do_POST(self):
-        # 获取请求头
-        headers = EnvironHeaders(self.headers.items())
-        
-        # 使用 Werkzeug 的 parse_form_data 解析 POST 数据
-        environ = {
-            'REQUEST_METHOD': 'POST',
-            'CONTENT_TYPE': self.headers['Content-Type'],
-            'CONTENT_LENGTH': self.headers['Content-Length'],
-            'wsgi.input': self.rfile,
-            'wsgi.errors': self.wfile,
-        }
-        stream, form_data, files = parse_form_data(environ)
-
-        # 获取 FileStorage 对象
-        json_file = files['json']
-
-        # 从 FileStorage 对象中读取内容
-        json_content = json_file.read().decode('utf-8')
+        content_length = int(self.headers['Content-Length'])
+        post_data = self.rfile.read(content_length).decode('utf-8')
+        print("Received POST data:", post_data)
 
         # 尝试解析 JSON 数据
         try:
-            json_data = json.loads(json_content)
-            print("Successfully parsed JSON data:", json_data)
+            json_data = json.loads(post_data)
         except json.JSONDecodeError as e:
             print("JSON decoding error:", str(e))
             self.send_response(400)  # Bad Request
@@ -53,14 +37,22 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(b"Invalid JSON received.")
             return
 
-        # 调用 convert_json_to_html 函数
-        html_output = convert_json_to_html(json_data)
+        # 将 json_data 保存到一个临时文件中
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".json", mode="w", encoding="utf-8") as temp_file:
+            json.dump(json_data, temp_file)
+            temp_file_path = temp_file.name
 
-        # 返回生成的HTML
-        self.send_response(200)  # OK
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
-        self.wfile.write(html_output.encode('utf-8'))
+        # 调用 convert_json_to_html 函数
+        try:
+            html_output = convert_json_to_html(temp_file_path)
+            # 返回生成的HTML
+            self.send_response(200)  # OK
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(html_output.encode('utf-8'))
+        finally:
+            # 删除临时文件
+            os.remove(temp_file_path)
 
 
 def convert_json_to_html(json_data):
