@@ -1,6 +1,34 @@
 import os
 import json
 from bs4 import BeautifulSoup, NavigableString
+from http.server import BaseHTTPRequestHandler
+
+def convert_json_to_html(json_data):
+    # 使用内存中的 JSON 数据，而不是从文件中读取
+    to_process, processed, spaces_data = parse_json_and_extract_data(json_data)
+    html_content = create_html_bookmark_file()
+    update_html_and_process_items(html_content, to_process, processed, spaces_data)
+    move_topapps_and_update_html(html_content, to_process, processed)
+    remove_empty_items(to_process)
+    process_items_without_savedURL(html_content, to_process, processed)
+    process_remaining_items_and_update_html(html_content, to_process, processed)
+    formatted_content = format_html(html_content)
+    return formatted_content
+
+class handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        content_length = int(self.headers['Content-Length'])
+        post_data = self.rfile.read(content_length)
+        json_data = json.loads(post_data)
+
+        # 使用你的函数生成 HTML
+        html_output = convert_json_to_html(json_data)
+
+        # 返回生成的 HTML
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(html_output.encode())
 
 def create_html_bookmark_file(json_path):
     print(json_path)
@@ -273,19 +301,3 @@ def format_html(json_path):
     # 将格式化后的内容写回文件
     with open(html_path, 'w', encoding='utf-8') as file:
         file.write(formatted_content)
-
-# 主函数，按顺序执行
-def main():
-    json_path = input("请输入需要转化的json文件路径: ")
-    print(f"您输入的路径是: {json_path}") 
-    create_html_bookmark_file(json_path) #创建一个网页先
-    to_process, processed, spaces_data = parse_json_and_extract_data(json_path) #处理 items 和 spaces 数据，先提出来
-    update_html_and_process_items(json_path, to_process, processed, spaces_data) # 创建根文件夹space 并清理 unpin 这些
-    move_topapps_and_update_html(json_path, to_process, processed) # 处理 TopApps
-    remove_empty_items(to_process) # 找出 to_process 列表中，Title，savedTitle，savedURL，parentID 同时为空或none的 item，我也搞不清他们是干嘛的，干掉他们
-    process_items_without_savedURL(json_path, to_process, processed) # 开始处理子文件夹
-    process_remaining_items_and_update_html(json_path, to_process, processed) # 开始处理书签
-    format_html(json_path) #格式化一下试试
-
-if __name__ == '__main__':
-    main()
