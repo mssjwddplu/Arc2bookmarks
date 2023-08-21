@@ -1,89 +1,9 @@
 import os
 import json
 from bs4 import BeautifulSoup, NavigableString
-from http.server import BaseHTTPRequestHandler
-from io import BytesIO
-from werkzeug.datastructures import EnvironHeaders
-from werkzeug.formparser import parse_form_data
-import cgi
-from email.utils import parse_header
+from flask import Flask, request, send_from_directory
 
-'''
-class HTTPRequest(BaseHTTPRequestHandler):
-    def __init__(self, request_text):
-        self.rfile = BytesIO(request_text)
-        self.raw_requestline = self.rfile.readline()
-        self.error_code = self.error_message = None
-        self.parse_request()
-
-    def send_error(self, code, message):
-        self.error_code = code
-        self.error_message = message
-'''
-
-class handler(BaseHTTPRequestHandler):
-    def do_POST(self):
-        content_type, content_type_options = parse_header(self.headers['Content-Type'])
-        assert content_type == 'multipart/form-data'
-        boundary = content_type_options['boundary'].encode('ascii')
-        
-        content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length)
-        
-        # 使用werkzeug库解析multipart/form-data请求
-        stream, form_data, files = parse_form_data({'REQUEST_METHOD': 'POST', 'CONTENT_TYPE': self.headers['Content-Type'], 'CONTENT_LENGTH': content_length}, stream=BytesIO(post_data), strict=False)
-        
-        # 检查是否正确地从请求中提取了文件
-        if 'json' not in files:
-            self.send_response(400)  # Bad Request
-            self.send_header('Content-type', 'text/plain')
-            self.end_headers()
-            self.wfile.write(b"JSON file not found in request.")
-            return
-        
-        json_file = files['json']
-        
-        # 将文件内容保存到临时文件中
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as temp:
-            temp.write(json_file.read())
-            json_path = temp.name
-
-        print(f"Saved JSON data to temporary file: {json_path}")  # 打印临时文件路径
-
-        # 尝试解析JSON数据
-        with open(json_path, 'r', encoding='utf-8') as file:
-            try:
-                json_data = json.load(file)
-            except json.JSONDecodeError as e:
-                print(f"JSON decoding error: {str(e)}")  # 打印JSON解析错误
-                self.send_response(400)  # Bad Request
-                self.send_header('Content-type', 'text/plain')
-                self.end_headers()
-                self.wfile.write(b"Invalid JSON received.")
-                return
-
-        # 调用 convert_json_to_html 函数
-        html_output = convert_json_to_html(json_path)
-
-        # 返回生成的HTML
-        self.send_response(200)  # OK
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
-        self.wfile.write(html_output.encode('utf-8'))
-
-
-def convert_json_to_html(json_data):
-    # 使用内存中的 JSON 数据，而不是从文件中读取
-    to_process, processed, spaces_data = parse_json_and_extract_data(json_data)
-    html_content = create_html_bookmark_file()
-    update_html_and_process_items(html_content, to_process, processed, spaces_data)
-    move_topapps_and_update_html(html_content, to_process, processed)
-    remove_empty_items(to_process)
-    process_items_without_savedURL(html_content, to_process, processed)
-    process_remaining_items_and_update_html(html_content, to_process, processed)
-    formatted_content = format_html(html_content)
-    return formatted_content
-
+app = Flask(__name__)
 
 def create_html_bookmark_file(json_path):
     print(json_path)
@@ -147,7 +67,6 @@ def parse_json_and_extract_data(json_path):
             spaces_data.append(space_data)
     processed = []
     return to_process, processed, spaces_data
-
 
 def update_html_and_process_items(json_path, to_process, processed, spaces_data): 
     # 获取 JSON 文件所在的目录
@@ -357,3 +276,56 @@ def format_html(json_path):
     # 将格式化后的内容写回文件
     with open(html_path, 'w', encoding='utf-8') as file:
         file.write(formatted_content)
+
+
+@app.route('/api/importArc2html', methods=['POST'])
+def handle_request():
+    # Ensure a file was uploaded
+    if 'json' not in request.files:
+        return "No file provided", 400
+
+    uploaded_file = request.files['json']
+    if uploaded_file.filename == '':
+        return "No file selected", 400
+
+    # Use the in-memory file for processing
+    json_data = uploaded_file.read().decode('utf-8')
+    json_path = os.path.join("/tmp", uploaded_file.filename)
+    with open(json_path, 'w', encoding='utf-8') as file:
+        file.write(json_data)
+
+    create_html_bookmark_file(json_path)
+    to_process, processed, spaces_data = parse_json_and_extract_data(json_path)
+    update_html_and_process_items(json_path, to_process, processed, spaces_data)
+    move_topapps_and_update_html(json_path, to_process, processed)
+    remove_empty_items(to_process)
+    process_items_without_savedURL(json_path, to_process, processed)
+    process_remaining_items_and_update_html(json_path, to_process, processed)
+    format_html(json_path)
+
+    directory = os.path.dirname(json_path) or '.'
+    html_path = os.path.join(directory, "bookmark_output.html")
+
+    # Send the HTML file back as a response
+    return send_from_directory(directory, "bookmark_output.html")
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+'''
+# 主函数，按顺序执行
+def main():
+    json_path = input("请输入需要转化的json文件路径: ")
+    print(f"您输入的路径是: {json_path}") 
+    create_html_bookmark_file(json_path) #创建一个网页先
+    to_process, processed, spaces_data = parse_json_and_extract_data(json_path) #处理 items 和 spaces 数据，先提出来
+    update_html_and_process_items(json_path, to_process, processed, spaces_data) # 创建根文件夹space 并清理 unpin 这些
+    move_topapps_and_update_html(json_path, to_process, processed) # 处理 TopApps
+    remove_empty_items(to_process) # 找出 to_process 列表中，Title，savedTitle，savedURL，parentID 同时为空或none的 item，我也搞不清他们是干嘛的，干掉他们
+    process_items_without_savedURL(json_path, to_process, processed) # 开始处理子文件夹
+    process_remaining_items_and_update_html(json_path, to_process, processed) # 开始处理书签
+    format_html(json_path) #格式化一下试试
+
+if __name__ == '__main__':
+    main()
+'''
