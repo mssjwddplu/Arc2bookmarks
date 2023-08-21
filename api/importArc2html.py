@@ -3,8 +3,6 @@ import json
 from bs4 import BeautifulSoup, NavigableString
 from http.server import BaseHTTPRequestHandler
 from multipart import parse_form_data
-from io import BytesIO
-from cgi import FieldStorage
 
 def convert_json_to_html(json_data):
     # 使用内存中的 JSON 数据，而不是从文件中读取
@@ -18,55 +16,34 @@ def convert_json_to_html(json_data):
     formatted_content = format_html(html_content)
     return formatted_content
 
-from http.server import BaseHTTPRequestHandler
-import json
-from io import BytesIO
-from cgi import FieldStorage
-
 class handler(BaseHTTPRequestHandler):
-    print("执行 handler")
 
     def do_POST(self):
-        print("执行 do_POST")
-
-        # 解析 multipart/form-data 请求
-        form = FieldStorage(
-            fp=self.rfile,
-            headers=self.headers,
-            environ={
-                'REQUEST_METHOD': 'POST',
-                'CONTENT_TYPE': self.headers['Content-Type'],
-            })
-
-        # 检查是否有名为 'json' 的文件字段
-        if 'json' not in form:
-            self.send_response(400)  # Bad Request
-            self.send_header('Content-type', 'text/plain')
-            self.end_headers()
-            self.wfile.write(b"No 'json' file field in the request.")
-            return
-
-        file_item = form['json']
-        file_content = file_item.file.read().decode('utf-8')
-
-        # 打印接收到的 POST 数据
-        print("打印接收到的 POST 数据:", file_content)
+        # 获取请求头中的 content-type
+        content_type = self.headers.get('Content-Type')
+        
+        # 使用 python-multipart 解析请求数据
+        environ = {
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': content_type,
+            'CONTENT_LENGTH': self.headers.get('Content-Length')
+        }
+        form_data = parse_form_data(environ, self.rfile)
+        
+        # 获取上传的文件内容
+        file_content = form_data.files['json'][0].file.read().decode('utf-8')
 
         # 尝试解析 JSON 数据
-        print("尝试解析 JSON 数据")
         try:
             json_data = json.loads(file_content)
-            print("Successfully parsed JSON data:", json_data)
-        except json.JSONDecodeError as e:
-            print("JSON decoding error:", str(e))
+        except json.JSONDecodeError:
             self.send_response(400)  # Bad Request
             self.send_header('Content-type', 'text/plain')
             self.end_headers()
             self.wfile.write(b"Invalid JSON received.")
             return
 
-        # 调用 convert_json_to_html 函数
-        print("调用 convert_json_to_html 函数")
+        # 调用 convert_json_to_html 函数（假设您已经定义了这个函数）
         html_output = convert_json_to_html(json_data)
 
         # 返回生成的HTML
