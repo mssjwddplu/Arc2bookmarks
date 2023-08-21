@@ -40,6 +40,7 @@ class handler(BaseHTTPRequestHandler):
 
         # 检查是否有解析错误
         if request.error_code:
+            print("Error parsing request:", request.error_message)  # 添加日志打印
             self.send_response(400)  # Bad Request
             self.send_header('Content-type', 'text/plain')
             self.end_headers()
@@ -49,10 +50,14 @@ class handler(BaseHTTPRequestHandler):
         # 获取 json 文件内容
         file_content = form_data.files['json'][0].file.read().decode('utf-8')
 
+        # 打印接收到的JSON内容
+        print("Received JSON content:", json_file_content)  # 添加日志打印
+
         # 尝试解析 JSON 数据
         try:
             json_data = json.loads(file_content)
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            print("Error decoding JSON:", str(e))  # 添加日志打印
             self.send_response(400)  # Bad Request
             self.send_header('Content-type', 'text/plain')
             self.end_headers()
