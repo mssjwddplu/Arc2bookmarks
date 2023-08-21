@@ -27,7 +27,7 @@ class handler(BaseHTTPRequestHandler):
         content_type = self.headers['Content-Type']
 
         environ = {
-            'CONTENT_LENGTH': content_length,
+            'CONTENT_LENGTH': str(content_length),
             'CONTENT_TYPE': content_type,
             'wsgi.input': self.rfile,
         }
