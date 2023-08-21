@@ -17,18 +17,29 @@ def convert_json_to_html(json_data):
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
-        content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length)
-        json_data = json.loads(post_data)
+    content_length = int(self.headers['Content-Length'])
+    post_data = self.rfile.read(content_length).decode('utf-8')
 
-        # 使用你的函数生成 HTML
-        html_output = convert_json_to_html(json_data)
+    # 打印接收到的 POST 数据
+    print("Received POST data:", post_data)
 
-        # 返回生成的 HTML
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html')
+    # 检查请求体是否为空
+    if not post_data:
+        self.send_response(400)  # Bad Request
+        self.send_header('Content-type', 'text/plain')
         self.end_headers()
-        self.wfile.write(html_output.encode())
+        self.wfile.write(b"Empty request body received.")
+        return
+
+    # 尝试解析 JSON 数据
+    try:
+        json_data = json.loads(post_data)
+    except json.JSONDecodeError:
+        self.send_response(400)  # Bad Request
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        self.wfile.write(b"Invalid JSON received.")
+        return
 
 def create_html_bookmark_file(json_path):
     print(json_path)
