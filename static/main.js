@@ -14,7 +14,15 @@ function convertToJson() {
         method: 'POST',
         body: formData
     })
-    .then(response => response.blob())
+    .then(response => {
+        // 检查响应是否正常
+        if (!response.ok) {
+            // 打印服务器返回的状态和状态文本
+            console.error('Server Response:', response.status, response.statusText);
+            throw new Error('Server responded with an error.');
+        }
+        return response.blob();
+    })
     .then(blob => {
         const downloadLink = document.getElementById('downloadLink');
         downloadLink.href = URL.createObjectURL(blob);
@@ -23,6 +31,6 @@ function convertToJson() {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred. Please try again.');
+        alert('An error occurred. Please check the console for more details.');
     });
 }
