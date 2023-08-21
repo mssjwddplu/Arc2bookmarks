@@ -5,7 +5,7 @@ from http.server import BaseHTTPRequestHandler
 from io import BytesIO
 from werkzeug.datastructures import EnvironHeaders
 from werkzeug.formparser import parse_form_data
-from email.utils import parse_header
+from http.client import parse_header
 
 '''
 class HTTPRequest(BaseHTTPRequestHandler):
