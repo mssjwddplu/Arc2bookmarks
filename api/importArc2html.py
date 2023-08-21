@@ -22,37 +22,53 @@ class HTTPRequest(BaseHTTPRequestHandler):
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
+        content_type, content_type_options = parse_header(self.headers['Content-Type'])
+        assert content_type == 'multipart/form-data'
+        boundary = content_type_options['boundary'].encode('ascii')
+        
         content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length).decode('utf-8')
-        print("Received POST data:", post_data)
-
-        # 尝试解析 JSON 数据
-        try:
-            json_data = json.loads(post_data)
-        except json.JSONDecodeError as e:
-            print("JSON decoding error:", str(e))
+        post_data = self.rfile.read(content_length)
+        
+        # 使用werkzeug库解析multipart/form-data请求
+        stream, form_data, files = parse_form_data({'REQUEST_METHOD': 'POST', 'CONTENT_TYPE': self.headers['Content-Type'], 'CONTENT_LENGTH': content_length}, stream=BytesIO(post_data), strict=False)
+        
+        # 检查是否正确地从请求中提取了文件
+        if 'json' not in files:
             self.send_response(400)  # Bad Request
             self.send_header('Content-type', 'text/plain')
             self.end_headers()
-            self.wfile.write(b"Invalid JSON received.")
+            self.wfile.write(b"JSON file not found in request.")
             return
+        
+        json_file = files['json']
+        
+        # 将文件内容保存到临时文件中
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as temp:
+            temp.write(json_file.read())
+            json_path = temp.name
 
-        # 将 json_data 保存到一个临时文件中
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".json", mode="w", encoding="utf-8") as temp_file:
-            json.dump(json_data, temp_file)
-            temp_file_path = temp_file.name
+        print(f"Saved JSON data to temporary file: {json_path}")  # 打印临时文件路径
+
+        # 尝试解析JSON数据
+        with open(json_path, 'r', encoding='utf-8') as file:
+            try:
+                json_data = json.load(file)
+            except json.JSONDecodeError as e:
+                print(f"JSON decoding error: {str(e)}")  # 打印JSON解析错误
+                self.send_response(400)  # Bad Request
+                self.send_header('Content-type', 'text/plain')
+                self.end_headers()
+                self.wfile.write(b"Invalid JSON received.")
+                return
 
         # 调用 convert_json_to_html 函数
-        try:
-            html_output = convert_json_to_html(temp_file_path)
-            # 返回生成的HTML
-            self.send_response(200)  # OK
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            self.wfile.write(html_output.encode('utf-8'))
-        finally:
-            # 删除临时文件
-            os.remove(temp_file_path)
+        html_output = convert_json_to_html(json_path)
+
+        # 返回生成的HTML
+        self.send_response(200)  # OK
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(html_output.encode('utf-8'))
 
 
 def convert_json_to_html(json_data):
