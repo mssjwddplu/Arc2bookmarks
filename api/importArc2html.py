@@ -34,7 +34,8 @@ class handler(BaseHTTPRequestHandler):
         # 尝试解析 JSON 数据
         try:
             json_data = json.loads(post_data)
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            print(f"JSON decoding error: {e}")  # 打印具体的错误信息
             self.send_response(400)  # Bad Request
             self.send_header('Content-type', 'text/plain')
             self.end_headers()
