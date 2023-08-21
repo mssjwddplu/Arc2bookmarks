@@ -2,6 +2,9 @@ import os
 import json
 from bs4 import BeautifulSoup, NavigableString
 from flask import Flask, request, send_from_directory
+import datetime
+import random
+import string
 
 app = Flask(__name__)
 
@@ -277,6 +280,17 @@ def format_html(json_path):
     with open(html_path, 'w', encoding='utf-8') as file:
         file.write(formatted_content)
 
+# 实现文件名唯一性
+def generate_unique_filename(original_filename):
+    # If the original filename is the default "StorableSidebar.json", generate a new prefix
+    prefix = original_filename if original_filename != "StorableSidebar.json" else ''.join(random.choices(string.ascii_lowercase + string.digits, k=5))
+    
+    # Create a unique filename using the prefix and current timestamp
+    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    unique_filename = f"{prefix}_{timestamp}.json"
+    
+    return unique_filename
+
 
 @app.route('/api/importArc2html', methods=['POST'])
 def handle_request():
@@ -290,7 +304,9 @@ def handle_request():
 
     # Use the in-memory file for processing
     json_data = uploaded_file.read().decode('utf-8')
-    json_path = os.path.join("/tmp", uploaded_file.filename)
+    # json_path = os.path.join("/tmp", uploaded_file.filename) 修改为下面两行，使用一个唯一的文件名
+    unique_filename = generate_unique_filename(uploaded_file.filename)
+    json_path = os.path.join("/tmp", unique_filename)
     with open(json_path, 'w', encoding='utf-8') as file:
         file.write(json_data)
 
