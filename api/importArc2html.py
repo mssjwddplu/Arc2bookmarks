@@ -3,7 +3,8 @@ import json
 from bs4 import BeautifulSoup, NavigableString
 from http.server import BaseHTTPRequestHandler
 from io import BytesIO
-import cgi
+from werkzeug.datastructures import FileStorage
+from werkzeug.formparser import parse_form_data
 
 '''
 class HTTPRequest(BaseHTTPRequestHandler):
