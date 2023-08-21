@@ -6,6 +6,7 @@ from io import BytesIO
 from werkzeug.datastructures import EnvironHeaders
 from werkzeug.formparser import parse_form_data
 import cgi
+from email.utils import parse_header
 
 '''
 class HTTPRequest(BaseHTTPRequestHandler):
