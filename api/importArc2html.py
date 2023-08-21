@@ -23,13 +23,21 @@ class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length).decode('utf-8')
+        content_type = self.headers['Content-Type']
+
+        environ = {
+            'CONTENT_LENGTH': content_length,
+            'CONTENT_TYPE': content_type,
+            'wsgi.input': self.rfile,
+        }
+        stream, form, files = parse_form_data(environ)
+        json_file = files.get('json')
 
         # 打印接收到的 POST 数据
-        print("Received POST data:", post_data)
+        print("Received POST data:")
 
         # 检查请求体是否为空
-        if not post_data:
+        if not json_file:
             self.send_response(400)  # Bad Request
             self.send_header('Content-type', 'text/plain')
             self.end_headers()
@@ -38,8 +46,8 @@ class handler(BaseHTTPRequestHandler):
 
         # 尝试解析 JSON 数据
         try:
-            json_data = json.loads(post_data)
-            print("Successfully parsed JSON data:", json_data)
+            json_data = json.loads(json_file)
+            print("Successfully parsed JSON data:")
         except json.JSONDecodeError as e:
             print("JSON decoding error:", str(e))
             self.send_response(400)  # Bad Request
