@@ -31,18 +31,18 @@ $(document).ready(function() {
                 // 显示 "Upload successful. Estimated wait time: XX seconds"
                 $("#upload-status").text("Upload successful. Estimated wait time: " + response.estimated_wait_time + " seconds");
 
-                const downloadLink = document.getElementById('downloadLink');
-                const blob = new Blob([response.html_content], {type: 'text/html'});
-                const blobURL = URL.createObjectURL(blob);
-                downloadLink.href = blobURL;
-                
-                downloadLink.download = 'converted.html';
-                downloadLink.style.display = 'block';
-
                 // 使用 setTimeout 在3秒后显示 "Conversion completed. Please download using the link below."
                 setTimeout(function() {
+                    const downloadLink = document.getElementById('downloadLink');
+                    const blob = new Blob([response.html_content], {type: 'text/html'});
+                    const blobURL = URL.createObjectURL(blob);
+                    downloadLink.href = blobURL;
+                    
+                    downloadLink.download = 'converted.html';
+                    downloadLink.style.display = 'block';
+
                     $("#upload-status").text("Conversion completed. Please download using the link below.");
-                }, 1000);  // 3秒的延迟
+                }, 3000);  // 3秒的延迟
             },
             error: function(jqXHR, textStatus, errorMessage) {
                 console.error('Error:', errorMessage);
