@@ -341,11 +341,8 @@ def handle_request():
     estimated_wait_time = file_queue_count * 2  # 假设每个文件处理需要2秒
     file_queue_count += 1
 
-    # json_path = os.path.join("/tmp", uploaded_file.filename) 修改为下面两行，使用一个唯一的文件名
-    # unique_filename = generate_unique_filename(uploaded_file.filename)
-    # json_path = os.path.join("/tmp", unique_filename)
-
-    # 上述再次修改，变成创建一个隔离的工作目录
+    # 创建一个隔离的工作目录
+    unique_filename = generate_unique_filename(uploaded_file.filename)
     work_dir = os.path.join("/tmp", unique_filename)
     os.makedirs(work_dir, exist_ok=True)
     json_path = os.path.join(work_dir, unique_filename)
