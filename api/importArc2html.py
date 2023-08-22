@@ -6,9 +6,12 @@ import datetime
 import random
 import string
 from queue import Queue
+import time
 
 # 创建一个全局的处理队列
 file_processing_queue = Queue()
+# 跟踪队列中的文件数
+file_queue_count = 0
 
 def is_valid_json(file_content):
     """检查给定的内容是否为有效的 JSON"""
@@ -309,6 +312,17 @@ def generate_unique_filename(original_filename):
 
 @app.route('/api/importArc2html', methods=['POST'])
 def handle_request():
+    global file_queue_count
+
+    # 清理超过5分钟未修改的目录
+    current_time = time.time()
+    for directory in os.listdir('/tmp'):
+        dir_path = os.path.join('/tmp', directory)
+        if os.path.isdir(dir_path):
+            last_modified = os.path.getmtime(dir_path)
+            if current_time - last_modified > 300:  # 5分钟 = 300秒
+                shutil.rmtree(dir_path)
+
     # Ensure a file was uploaded
     if 'json' not in request.files:
         return "No file provided", 400
@@ -323,6 +337,10 @@ def handle_request():
     if not is_valid_json(file_content):
         return "Invalid JSON file", 400
 
+    # 计算估计的等待时间
+    estimated_wait_time = file_queue_count * 2  # 假设每个文件处理需要2秒
+    file_queue_count += 1
+
     # json_path = os.path.join("/tmp", uploaded_file.filename) 修改为下面两行，使用一个唯一的文件名
     # unique_filename = generate_unique_filename(uploaded_file.filename)
     # json_path = os.path.join("/tmp", unique_filename)
@@ -331,10 +349,10 @@ def handle_request():
     work_dir = os.path.join("/tmp", unique_filename)
     os.makedirs(work_dir, exist_ok=True)
     json_path = os.path.join(work_dir, unique_filename)
-
     with open(json_path, 'w', encoding='utf-8') as file:
         file.write(file_content)
 
+    # 文件处理逻辑
     create_html_bookmark_file(json_path)
     to_process, processed, spaces_data = parse_json_and_extract_data(json_path)
     update_html_and_process_items(json_path, to_process, processed, spaces_data)
@@ -346,6 +364,9 @@ def handle_request():
 
     directory = os.path.dirname(json_path) or '.'
     html_path = os.path.join(directory, "bookmark_output.html")
+
+    # 完成文件处理，减少队列计数
+    file_queue_count -= 1
 
     # Send the HTML file back as a response
     return send_from_directory(directory, "bookmark_output.html")
