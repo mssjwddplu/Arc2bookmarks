@@ -30,7 +30,7 @@ $(document).ready(function() {
                 xhr.upload.addEventListener("progress", function(evt) {
                     if (evt.lengthComputable) {
                         var percentComplete = evt.loaded / evt.total;
-                        percentComplete = parseInt(percentComplete * 100);
+                        percentComplete = parseInt(percentComplete * 95);  // 将进度条的最大值设置为95%
                         $('#upload-progress-bar').width(percentComplete + '%');
                         $('#upload-progress-bar').html(percentComplete + '%');
                     }
@@ -39,6 +39,9 @@ $(document).ready(function() {
             },
 
             success: function(data) {
+                // 将进度条设置为100%
+                $('#upload-progress-bar').width('100%');
+                $('#upload-progress-bar').html('100%');
                 const response = JSON.parse(data);  // 解析服务器返回的 JSON 响应
 
                 // 显示 "Upload successful. Estimated wait time: XX seconds"
