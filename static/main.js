@@ -28,6 +28,9 @@ $(document).ready(function() {
             success: function(data) {
                 const response = JSON.parse(data);  // 解析服务器返回的 JSON 响应
 
+                // 显示 "Upload successful. Estimated wait time: XX seconds"
+                $("#upload-status").text("Upload successful. Estimated wait time: " + response.estimated_wait_time + " seconds");
+
                 const downloadLink = document.getElementById('downloadLink');
                 const blob = new Blob([response.html_content], {type: 'text/html'});
                 const blobURL = URL.createObjectURL(blob);
@@ -36,15 +39,13 @@ $(document).ready(function() {
                 downloadLink.download = 'converted.html';
                 downloadLink.style.display = 'block';
 
-                // 显示估计的等待时间
-                $("#upload-status").text("Estimated wait time: " + response.estimated_wait_time + " seconds");
+                  // 显示 "Conversion completed. Please download using the link below."
+                $("#upload-status").text("Conversion completed. Please download using the link below.");
             },
             error: function(jqXHR, textStatus, errorMessage) {
                 console.error('Error:', errorMessage);
+                // 显示错误消息
                 $("#upload-status").text("An error occurred. Please try again.");
-
-                // 隐藏估计的等待时间
-                $("#estimated-wait-time").text("");
             }
         });
     });
