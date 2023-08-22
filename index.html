@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JSON to HTML Converter</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="/static/main.js"></script>
 </head>
 <body>
     <h1>JSON to HTML Converter</h1>
     <p>Upload your JSON file to convert it to HTML:</p>
     <input type="file" id="jsonInput">
-    <button onclick="convertToJson()">Convert</button>
+    <button type="submit">Convert</button>
     <div id="estimated-wait-time"></div>
     <a id="downloadLink" style="display:none;">Download HTML</a>
 </body>
