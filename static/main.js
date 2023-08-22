@@ -1,7 +1,7 @@
 $(document).ready(function() {
     $("#upload-form").submit(function(e) {
         e.preventDefault();
-        
+
         const fileInput = document.getElementById('jsonInput');
         const file = fileInput.files[0];
         if (!file) {
@@ -39,8 +39,10 @@ $(document).ready(function() {
                 downloadLink.download = 'converted.html';
                 downloadLink.style.display = 'block';
 
-                  // 显示 "Conversion completed. Please download using the link below."
-                $("#upload-status").text("Conversion completed. Please download using the link below.");
+                // 使用 setTimeout 在3秒后显示 "Conversion completed. Please download using the link below."
+                setTimeout(function() {
+                    $("#upload-status").text("Conversion completed. Please download using the link below.");
+                }, 1000);  // 3秒的延迟
             },
             error: function(jqXHR, textStatus, errorMessage) {
                 console.error('Error:', errorMessage);
