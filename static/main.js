@@ -25,6 +25,19 @@ $(document).ready(function() {
             processData: false,
             contentType: false,
             
+            xhr: function() {
+                var xhr = new window.XMLHttpRequest();
+                xhr.upload.addEventListener("progress", function(evt) {
+                    if (evt.lengthComputable) {
+                        var percentComplete = evt.loaded / evt.total;
+                        percentComplete = parseInt(percentComplete * 100);
+                        $('#upload-progress-bar').width(percentComplete + '%');
+                        $('#upload-progress-bar').html(percentComplete + '%');
+                    }
+                }, false);
+                return xhr;
+            },
+
             success: function(data) {
                 const response = JSON.parse(data);  // 解析服务器返回的 JSON 响应
 
