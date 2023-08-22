@@ -365,8 +365,13 @@ def handle_request():
     # 完成文件处理，减少队列计数
     file_queue_count -= 1
 
-    # Send the HTML file back as a response
-    return send_from_directory(directory, "bookmark_output.html")
+    # Send the HTML file back as a response，以及需要等待的响应时间
+    response = {
+    "estimated_wait_time": estimated_wait_time,
+    "file_path": os.path.join(directory, "bookmark_output.html")
+    }
+    return json.dumps(response)
+
 
 if __name__ == '__main__':
     app.run(debug=True)

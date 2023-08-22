@@ -27,13 +27,15 @@ $(document).ready(function() {
                 $("#estimated-wait-time").text("Estimated wait time: " + estimatedTime + " seconds");
             },
             success: function(data) {
+                const response = JSON.parse(data);  // 解析服务器返回的 JSON 响应
+
                 const downloadLink = document.getElementById('downloadLink');
-                downloadLink.href = URL.createObjectURL(data);
+                downloadLink.href = response.file_path;  // 使用 response.file_path 获取转换后的文件路径
                 downloadLink.download = 'converted.html';
                 downloadLink.style.display = 'block';
 
-                // 隐藏估计的等待时间
-                $("#estimated-wait-time").text("");
+                // 显示估计的等待时间
+                $("#estimated-wait-time").text("Estimated wait time: " + response.estimated_wait_time + " seconds");
             },
             error: function(jqXHR, textStatus, errorMessage) {
                 console.error('Error:', errorMessage);
