@@ -5,6 +5,10 @@ from flask import Flask, request, send_from_directory
 import datetime
 import random
 import string
+from queue import Queue
+
+# 创建一个全局的处理队列
+file_processing_queue = Queue()
 
 def is_valid_json(file_content):
     """检查给定的内容是否为有效的 JSON"""
@@ -320,8 +324,14 @@ def handle_request():
         return "Invalid JSON file", 400
 
     # json_path = os.path.join("/tmp", uploaded_file.filename) 修改为下面两行，使用一个唯一的文件名
-    unique_filename = generate_unique_filename(uploaded_file.filename)
-    json_path = os.path.join("/tmp", unique_filename)
+    # unique_filename = generate_unique_filename(uploaded_file.filename)
+    # json_path = os.path.join("/tmp", unique_filename)
+
+    # 上述再次修改，变成创建一个隔离的工作目录
+    work_dir = os.path.join("/tmp", unique_filename)
+    os.makedirs(work_dir, exist_ok=True)
+    json_path = os.path.join(work_dir, unique_filename)
+
     with open(json_path, 'w', encoding='utf-8') as file:
         file.write(file_content)
 
