@@ -9,6 +9,9 @@ $(document).ready(function() {
             return;
         }
 
+        // 用户已选择文件，显示 "Uploading..."
+        $("#upload-status").text("Uploading...");
+
         const formData = new FormData();
         formData.append('json', file);
 
