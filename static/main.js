@@ -34,11 +34,11 @@ $(document).ready(function() {
                 downloadLink.style.display = 'block';
 
                 // 显示估计的等待时间
-                $("#estimated-wait-time").text("Estimated wait time: " + response.estimated_wait_time + " seconds");
+                $("#upload-status").text("Estimated wait time: " + response.estimated_wait_time + " seconds");
             },
             error: function(jqXHR, textStatus, errorMessage) {
                 console.error('Error:', errorMessage);
-                alert('An error occurred. Please try again.');
+                $("#upload-status").text("An error occurred. Please try again.");
 
                 // 隐藏估计的等待时间
                 $("#estimated-wait-time").text("");
