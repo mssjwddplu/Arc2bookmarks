@@ -21,11 +21,7 @@ $(document).ready(function() {
             data: formData,
             processData: false,
             contentType: false,
-            beforeSend: function() {
-                // 显示估计的等待时间
-                const estimatedTime = file_queue_count * 2;  // 假设每个文件处理需要2秒
-                $("#estimated-wait-time").text("Estimated wait time: " + estimatedTime + " seconds");
-            },
+            
             success: function(data) {
                 const response = JSON.parse(data);  // 解析服务器返回的 JSON 响应
 
