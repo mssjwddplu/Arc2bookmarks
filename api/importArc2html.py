@@ -6,7 +6,18 @@ import datetime
 import random
 import string
 
+def is_valid_json(file_content):
+    """检查给定的内容是否为有效的 JSON"""
+    try:
+        json.loads(file_content)
+        return True
+    except:
+        return False
+
+#  Flask 应用实例化
 app = Flask(__name__)
+# 设置最大上传文件大小为 10MB
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
 
 def create_html_bookmark_file(json_path):
     print(json_path)
@@ -303,12 +314,16 @@ def handle_request():
         return "No file selected", 400
 
     # Use the in-memory file for processing
-    json_data = uploaded_file.read().decode('utf-8')
+    file_content = uploaded_file.read().decode('utf-8')
+    # 检查上传的文件是否为有效的 JSON
+    if not is_valid_json(file_content):
+        return "Invalid JSON file", 400
+
     # json_path = os.path.join("/tmp", uploaded_file.filename) 修改为下面两行，使用一个唯一的文件名
     unique_filename = generate_unique_filename(uploaded_file.filename)
     json_path = os.path.join("/tmp", unique_filename)
     with open(json_path, 'w', encoding='utf-8') as file:
-        file.write(json_data)
+        file.write(file_content)
 
     create_html_bookmark_file(json_path)
     to_process, processed, spaces_data = parse_json_and_extract_data(json_path)
