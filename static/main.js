@@ -26,7 +26,10 @@ $(document).ready(function() {
                 const response = JSON.parse(data);  // 解析服务器返回的 JSON 响应
 
                 const downloadLink = document.getElementById('downloadLink');
-                downloadLink.href = response.file_path;  // 使用 response.file_path 获取转换后的文件路径
+                const blob = new Blob([response.html_content], {type: 'text/html'});
+                const blobURL = URL.createObjectURL(blob);
+                downloadLink.href = blobURL;
+                
                 downloadLink.download = 'converted.html';
                 downloadLink.style.display = 'block';
 

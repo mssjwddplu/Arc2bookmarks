@@ -366,9 +366,12 @@ def handle_request():
     file_queue_count -= 1
 
     # Send the HTML file back as a response，以及需要等待的响应时间
+    with open(html_path, 'r', encoding='utf-8') as file:
+        html_content = file.read()
+
     response = {
-    "estimated_wait_time": estimated_wait_time,
-    "file_path": os.path.join(directory, "bookmark_output.html")
+        "estimated_wait_time": estimated_wait_time,
+        "html_content": html_content
     }
     return json.dumps(response)
 
